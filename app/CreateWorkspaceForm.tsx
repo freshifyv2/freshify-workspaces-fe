@@ -16,7 +16,6 @@ export default function CreateWorkspaceForm() {
     setError(null);
     try {
       const res = await fetch("/dashboard/workspaces/api/create", {
-        // Shell rewrites this back to workspaces-fe /api/create
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name, slug: slug || undefined }),
@@ -37,19 +36,24 @@ export default function CreateWorkspaceForm() {
 
   return (
     <div className="card">
-      <h2 style={{ marginBottom: 16 }}>Create a workspace</h2>
+      <div className="card-header">
+        <h2>Create a workspace</h2>
+        <p className="muted">Workspaces give your active company separate environments.</p>
+      </div>
       <form onSubmit={submit} className="stack">
-        <div>
-          <label className="label">Name</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Production" />
+        <div className="row-2">
+          <div className="field">
+            <label className="field-label">Name</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Production" />
+          </div>
+          <div className="field">
+            <label className="field-label">Slug (optional)</label>
+            <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="prod" />
+          </div>
         </div>
-        <div>
-          <label className="label">Slug (optional)</label>
-          <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="prod" />
-        </div>
-        {error && <div className="error">{error}</div>}
-        <div>
-          <button type="submit" className="primary" disabled={busy || !name}>
+        {error && <div className="field-error">{error}</div>}
+        <div className="cluster">
+          <button type="submit" className="btn btn-primary" disabled={busy || !name}>
             {busy ? "Creating..." : "Create workspace"}
           </button>
         </div>
