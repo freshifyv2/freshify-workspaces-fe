@@ -35,26 +35,42 @@ export default function CreateWorkspaceForm() {
   }
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <h2>Create a workspace</h2>
-        <p className="muted">Workspaces give your active company separate environments.</p>
+    <div className="section-card">
+      <div className="section-card-header">
+        <span className="section-card-icon" aria-hidden>+</span>
+        <h3 className="section-card-title">Create a New Workspace</h3>
       </div>
-      <form onSubmit={submit} className="stack">
-        <div className="row-2">
+      <form onSubmit={submit}>
+        <div className="field-grid">
           <div className="field">
-            <label className="field-label">Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Production" />
+            <label className="field-label">NAME</label>
+            <input
+              className="field-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Production"
+            />
           </div>
           <div className="field">
-            <label className="field-label">Slug (optional)</label>
-            <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="prod" />
+            <label className="field-label">SLUG (OPTIONAL)</label>
+            <input
+              className="field-input"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="prod"
+            />
           </div>
         </div>
-        {error && <div className="field-error">{error}</div>}
-        <div className="cluster">
+        {error && (
+          <div className="warning-banner" style={{ marginTop: 16 }}>
+            <span className="warning-banner-icon" aria-hidden>⚠</span>
+            {error}
+          </div>
+        )}
+        <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
           <button type="submit" className="btn btn-primary" disabled={busy || !name}>
-            {busy ? "Creating..." : "Create workspace"}
+            {busy ? "Creating..." : "Create Workspace"}
           </button>
         </div>
       </form>

@@ -7,6 +7,12 @@ import AddMemberForm from "./AddMemberForm";
 
 export const dynamic = "force-dynamic";
 
+function handleFromEmail(email?: string | null): string {
+  if (!email) return "user";
+  if (email.startsWith("+")) return email.replace(/[^0-9]/g, "");
+  return email.split("@")[0] || email;
+}
+
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return "?";
@@ -24,6 +30,10 @@ export default async function WorkspaceDetailPage({
   const claims = decodeClaims(token);
   if (!claims) redirect("/login");
 
+  const isOperator = Boolean(claims.operator);
+  const displayName = claims.displayName || claims.email || "User";
+  const handle = handleFromEmail(claims.email);
+
   let workspace: WorkspaceDetail | null = null;
   let error: string | null = null;
   try {
@@ -39,66 +49,83 @@ export default async function WorkspaceDetailPage({
   return (
     <Chrome
       active="workspaces"
-      pageTitle={workspace?.name || "Workspace"}
-      user={{ userId: claims.userId, displayName: claims.displayName, handle: claims.email }}
+      pageTitle="Workspace Detail"
+      user={{ userId: claims.userId, displayName, handle, isOperator }}
       activeCompany={claims.companyName ? { name: claims.companyName } : null}
     >
-      <div className="breadcrumb">
+      <div className="page-breadcrumb">
         <Link href="/dashboard">Dashboard</Link>
-        <span className="sep">›</span>
+        <span className="page-breadcrumb-sep">›</span>
         <Link href="/dashboard/workspaces">Workspaces</Link>
-        <span className="sep">›</span>
-        <span className="current">{workspace?.name || "—"}</span>
+        <span className="page-breadcrumb-sep">›</span>
+        <span className="page-breadcrumb-current">{workspace?.name || "—"}</span>
       </div>
 
       {error && (
-        <div className="card" style={{ marginBottom: 24 }}>
-          <div style={{ color: "#b42318" }}>{error}</div>
+        <div className="warning-banner" style={{ marginBottom: 16 }}>
+          <span className="warning-banner-icon" aria-hidden>⚠</span>
+          {error}
         </div>
       )}
 
       {workspace && (
         <>
-          <div className="profile-card">
-            <div className="profile-avatar">{initials(workspace.name)}</div>
-            <div className="profile-info">
-              <div className="profile-name-row">
-                <h1>{workspace.name}</h1>
-                {isActive ? (
-                  <span className="pill green"><span className="dot" /> Active</span>
-                ) : workspace.isDefault ? (
-                  <span className="pill cyan"><span className="dot" /> Default</span>
-                ) : (
-                  <span className="pill"><span className="dot" /> Available</span>
-                )}
-              </div>
-              <div className="profile-handle">
-                <code>{workspace.workspaceId}</code>
-              </div>
-              <div className="profile-meta">
-                {workspace.slug && <span>slug: <strong>{workspace.slug}</strong></span>}
-                <span>company: <code>{workspace.companyId}</code></span>
+          {/* Hero card */}
+          <div className="hero-card">
+            <div className="hero-card-left">
+              <span className="avatar-circle is-lg" aria-hidden style={{ background: "var(--violet-soft)", color: "var(--violet)" }}>
+                {initials(workspace.name)}
+              </span>
+              <div className="hero-card-text">
+                <span className="status-pill is-active hero-card-status">
+                  {isActive ? "Active session" : workspace.isDefault ? "Default" : "Available"}
+                </span>
+                <h1 className="hero-card-title">{workspace.name}</h1>
+                <p className="hero-card-subtitle">
+                  {workspace.isDefault ? "Default workspace" : "Custom workspace"} in {claims.companyName || "company"}
+                </p>
               </div>
             </div>
-            <div className="profile-actions">
-              <button className="btn btn-ghost btn-sm" type="button" disabled>Edit</button>
+            <div className="hero-card-actions">
+              <button type="button" className="btn btn-primary" disabled>
+                Update Workspace
+              </button>
             </div>
           </div>
 
-          <div className="kicker">Workspace details</div>
-          <div className="card">
-            <table className="kv-table">
-              <tbody>
-                <tr><th>Workspace ID</th><td><code>{workspace.workspaceId}</code></td></tr>
-                <tr><th>Company ID</th><td><code>{workspace.companyId}</code></td></tr>
-                <tr><th>Slug</th><td>{workspace.slug || "—"}</td></tr>
-                <tr><th>Created by</th><td><code>{workspace.createdBy}</code></td></tr>
-              </tbody>
-            </table>
+          {/* Primary Information */}
+          <div className="section-card">
+            <div className="section-card-header">
+              <h3 className="section-card-title">Primary Information</h3>
+            </div>
+            <div className="field-grid">
+              <div className="field">
+                <label className="field-label">WORKSPACE ID</label>
+                <input className="field-input is-readonly" value={workspace.workspaceId} readOnly />
+              </div>
+              <div className="field">
+                <label className="field-label">SLUG</label>
+                <input className="field-input is-readonly" value={workspace.slug || "—"} readOnly />
+              </div>
+              <div className="field">
+                <label className="field-label">COMPANY ID</label>
+                <input className="field-input is-readonly" value={workspace.companyId} readOnly />
+              </div>
+              <div className="field">
+                <label className="field-label">CREATED BY</label>
+                <input className="field-input is-readonly" value={workspace.createdBy} readOnly />
+              </div>
+            </div>
           </div>
 
-          <div className="kicker">Attached members</div>
-          <AddMemberForm workspaceId={workspace.workspaceId} />
+          {/* Members */}
+          <div className="section-card">
+            <div className="section-card-header">
+              <span className="section-card-icon" aria-hidden>◐</span>
+              <h3 className="section-card-title">Attached Members</h3>
+            </div>
+            <AddMemberForm workspaceId={workspace.workspaceId} />
+          </div>
         </>
       )}
     </Chrome>
