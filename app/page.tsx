@@ -50,12 +50,15 @@ export default async function WorkspacesIndex() {
   const owned = workspaces.filter((w) => w.role === "admin").length;
   const active = workspaces.filter((w) => w.workspaceId === claims.workspaceId).length;
 
+  const ctx = await loadChromeContext();
+
   return (
     <Chrome
       active="workspaces"
       pageTitle="Workspaces"
       user={{ userId: claims.userId, displayName, handle, isOperator }}
-      activeCompany={claims.companyName ? { name: claims.companyName } : null}
+      activeCompany={ctx?.activeCompany ?? (claims.companyName ? { name: claims.companyName } : null)}
+      tenantOptions={ctx?.tenantOptions ?? []}
     >
       <div className="page-breadcrumb">
         <Link href="/dashboard">Dashboard</Link>

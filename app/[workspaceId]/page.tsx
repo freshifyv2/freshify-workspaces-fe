@@ -46,13 +46,15 @@ export default async function WorkspaceDetailPage({
   }
 
   const isActive = workspace?.workspaceId === claims.workspaceId;
+  const ctx = await loadChromeContext();
 
   return (
     <Chrome
       active="workspaces"
       pageTitle="Workspace Detail"
       user={{ userId: claims.userId, displayName, handle, isOperator }}
-      activeCompany={claims.companyName ? { name: claims.companyName } : null}
+      activeCompany={ctx?.activeCompany ?? (claims.companyName ? { name: claims.companyName } : null)}
+      tenantOptions={ctx?.tenantOptions ?? []}
     >
       <div className="page-breadcrumb">
         <Link href="/dashboard">Dashboard</Link>
@@ -88,9 +90,30 @@ export default async function WorkspaceDetailPage({
               </div>
             </div>
             <div className="hero-card-actions">
-              <button type="button" className="btn btn-primary" disabled>
-                Update Workspace
-              </button>
+              {isOperator && (
+                <Link
+                  href={`/dashboard/workspaces/${workspace.workspaceId}/roles`}
+                  className="btn btn-secondary"
+                >
+                  Roles
+                </Link>
+              )}
+              {isOperator && (
+                <Link
+                  href={`/dashboard/workspaces/${workspace.workspaceId}/registry`}
+                  className="btn btn-secondary"
+                >
+                  Registry
+                </Link>
+              )}
+              {isOperator && (
+                <Link
+                  href={`/dashboard/workspaces/${workspace.workspaceId}/edit`}
+                  className="btn btn-primary"
+                >
+                  Edit Workspace
+                </Link>
+              )}
             </div>
           </div>
 
