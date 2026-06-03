@@ -15,6 +15,7 @@ import {
 } from "@/lib/api";
 import { Chrome } from "@/lib/Chrome";
 import { loadChromeContext } from "@/lib/chromeContext";
+import { OperatorOnly403 } from "@/lib/OperatorOnly";
 
 export const dynamic = "force-dynamic";
 
@@ -92,11 +93,21 @@ export default async function WorkspaceModuleSettingsPage({
   const claims = decodeClaims(token);
   if (!claims) redirect("/login");
   const isOperator = Boolean(claims.operator);
-  if (!isOperator) redirect(`/dashboard/workspaces/${params.workspaceId}`);
 
   const ctx = await loadChromeContext();
   const displayName = claims.displayName || claims.email || "User";
   const handle = handleFromEmail(claims.email);
+  if (!isOperator) {
+    return (
+      <OperatorOnly403
+        active="workspaces"
+        pageTitle="Workspace — Module Settings"
+        user={{ userId: claims.userId, displayName, handle, isOperator: false }}
+        activeCompany={ctx?.activeCompany ?? (claims.companyName ? { name: claims.companyName } : null)}
+        detail="Workspace module settings"
+      />
+    );
+  }
 
   let workspace: WorkspaceDetail | null = null;
   let catalog: RoleCatalog | null = null;
