@@ -18,6 +18,7 @@ import {
   type WorkspaceDetail,
 } from "@/lib/api";
 import { Chrome } from "@/lib/Chrome";
+import { OperatorOnly403 } from "@/lib/OperatorOnly";
 import { loadChromeContext } from "@/lib/chromeContext";
 
 export const dynamic = "force-dynamic";
@@ -70,7 +71,24 @@ export default async function WorkspaceRegistryPage({
   if (!claims) redirect("/login");
 
   const isOperator = Boolean(claims.operator);
-  if (!isOperator) redirect(`/dashboard/workspaces/${params.workspaceId}`);
+  if (!isOperator) {
+    return (
+      <OperatorOnly403
+        active="workspaces"
+        pageTitle="Workspace — Registry"
+        user={{
+          userId: claims.userId,
+          displayName: claims.displayName || claims.email || "User",
+          handle: (claims.email || "").startsWith("+")
+            ? (claims.email || "").replace(/[^0-9]/g, "")
+            : (claims.email || "").split("@")[0] || "user",
+          isOperator: false,
+        }}
+        activeCompany={claims.companyName ? { name: claims.companyName } : null}
+        detail="The workspace registry (legacy)"
+      />
+    );
+  }
 
   const ctx = await loadChromeContext();
   const displayName = claims.displayName || claims.email || "User";
