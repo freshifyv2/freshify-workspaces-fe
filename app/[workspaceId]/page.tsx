@@ -1,10 +1,11 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { readSessionToken, decodeClaims } from "@/lib/session";
-import { get, type WorkspaceDetail } from "@/lib/api";
+import { get, getServiceJson, USERS_URL, type WorkspaceDetail } from "@/lib/api";
 import { Chrome } from "@/lib/Chrome";
 import { loadChromeContext } from "@/lib/chromeContext";
 import AddMemberForm from "./AddMemberForm";
+import PendingMembers, { type PendingRow } from "./PendingMembers";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,41 @@ export default async function WorkspaceDetailPage({
     const msg = (e as Error).message;
     if (msg.includes("404")) notFound();
     error = msg;
+  }
+
+  // Deploy 4 — pull workspace registry to surface pending requests.
+  let pending: PendingRow[] = [];
+  if (workspace && isOperator) {
+    try {
+      const reg = await get<{ rows: Array<{ userId: string; status: string; joinedAt?: string | null }> }>(
+        `/v1/workspaces/${params.workspaceId}/registry`,
+        token,
+      );
+      const pendingIds = (reg.rows || []).filter((r) => r.status === "pending");
+      if (pendingIds.length > 0) {
+        try {
+          const ulist = await getServiceJson<{ users: Array<{ userId: string; displayName: string | null; email: string }> }>(
+            USERS_URL,
+            "/v1/admin/users",
+            token,
+          );
+          const byId = new Map(ulist.users.map((u) => [u.userId, u]));
+          pending = pendingIds.map((r) => {
+            const u = byId.get(r.userId);
+            return {
+              userId: r.userId,
+              displayName: u?.displayName ?? null,
+              email: u?.email ?? null,
+              requestedAt: r.joinedAt ?? null,
+            };
+          });
+        } catch {
+          pending = pendingIds.map((r) => ({ userId: r.userId, requestedAt: r.joinedAt ?? null }));
+        }
+      }
+    } catch {
+      // Non-fatal — pending section just stays empty.
+    }
   }
 
   const isActive = workspace?.workspaceId === claims.workspaceId;
@@ -92,18 +128,10 @@ export default async function WorkspaceDetailPage({
             <div className="hero-card-actions">
               {isOperator && (
                 <Link
-                  href={`/dashboard/workspaces/${workspace.workspaceId}/roles`}
+                  href={`/dashboard/workspaces/${workspace.workspaceId}/module-settings`}
                   className="btn btn-secondary"
                 >
-                  Roles
-                </Link>
-              )}
-              {isOperator && (
-                <Link
-                  href={`/dashboard/workspaces/${workspace.workspaceId}/registry`}
-                  className="btn btn-secondary"
-                >
-                  Registry
+                  <span aria-hidden>⚙</span> Module Settings
                 </Link>
               )}
               {isOperator && (
@@ -141,6 +169,22 @@ export default async function WorkspaceDetailPage({
               </div>
             </div>
           </div>
+
+          {/* Pending requests (operator-only) */}
+          {isOperator && (
+            <div className="section-card">
+              <div className="section-card-header">
+                <span className="section-card-icon" aria-hidden>◐</span>
+                <h3 className="section-card-title">Pending Join Requests</h3>
+                {pending.length > 0 ? (
+                  <span className="pill is-violet" style={{ marginLeft: "auto" }}>
+                    {pending.length} pending
+                  </span>
+                ) : null}
+              </div>
+              <PendingMembers workspaceId={workspace.workspaceId} rows={pending} />
+            </div>
+          )}
 
           {/* Members */}
           <div className="section-card">
