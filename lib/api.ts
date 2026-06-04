@@ -69,6 +69,7 @@ export interface WorkspaceAdminListItem {
 export interface WorkspaceListItem {
   workspaceId: string;
   companyId: string;
+  companyName?: string | null;
   name: string;
   slug: string | null;
   isDefault: boolean;

@@ -200,7 +200,7 @@ export default async function WorkspacesIndex() {
                           <span className="pill is-gray">{w.role}</span>
                         </td>
                         <td>
-                          <span className="tag-chip">{claims.companyName || w.companyId}</span>
+                          <span className="tag-chip">{w.companyName || claims.companyName || w.companyId}</span>
                         </td>
                         <td>
                           {isActive ? (
