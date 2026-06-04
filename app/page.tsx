@@ -26,7 +26,26 @@ function shortId(id: string): string {
   return `#W-${cleaned.slice(0, 4).toUpperCase()}`;
 }
 
-export default async function WorkspacesIndex() {
+// Deploy 5.16 — filter pills + search wired via searchParams (server-side).
+type WsFilter = "all" | "default" | "other" | "admin";
+function parseWsFilter(v: string | string[] | undefined): WsFilter {
+  const s = Array.isArray(v) ? v[0] : v;
+  if (s === "default" || s === "other" || s === "admin") return s;
+  return "all";
+}
+function parseQuery(v: string | string[] | undefined): string {
+  const s = Array.isArray(v) ? v[0] : v;
+  return (s ?? "").trim().slice(0, 80);
+}
+
+export default async function WorkspacesIndex({
+  searchParams,
+}: {
+  searchParams?: Promise<{ filter?: string; q?: string }>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const wsFilter = parseWsFilter(sp.filter);
+  const query = parseQuery(sp.q);
   const token = readSessionToken();
   if (!token) redirect("/login");
   const claims = decodeClaims(token);
@@ -49,6 +68,34 @@ export default async function WorkspacesIndex() {
   const defaults = workspaces.filter((w) => w.isDefault).length;
   const owned = workspaces.filter((w) => w.role === "admin").length;
   const active = workspaces.filter((w) => w.workspaceId === claims.workspaceId).length;
+
+  // Deploy 5.16 — apply filter + search to visible rows. Counts above stay
+  // pinned to the *full* list so pills always show true totals.
+  const qLower = query.toLowerCase();
+  const visibleWorkspaces = workspaces.filter((w) => {
+    if (wsFilter === "default" && !w.isDefault) return false;
+    if (wsFilter === "other" && w.isDefault) return false;
+    if (wsFilter === "admin" && w.role !== "admin") return false;
+    if (!qLower) return true;
+    const hay = [
+      w.name,
+      w.companyName ?? "",
+      w.companyId,
+      w.workspaceId,
+      w.role,
+      w.slug ?? "",
+    ]
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(qLower);
+  });
+  const buildHref = (filter: WsFilter) => {
+    const params = new URLSearchParams();
+    if (filter !== "all") params.set("filter", filter);
+    if (query) params.set("q", query);
+    const qs = params.toString();
+    return qs ? `/dashboard/workspaces?${qs}` : "/dashboard/workspaces";
+  };
 
   const ctx = await loadChromeContext();
 
@@ -133,26 +180,67 @@ export default async function WorkspacesIndex() {
       <div className="list-card">
         <div className="filter-bar">
           <div className="filter-pills">
-            <button type="button" className="filter-pill is-active">All</button>
-            <button type="button" className="filter-pill">Default</button>
-            <button type="button" className="filter-pill">Other</button>
-            <button type="button" className="filter-pill">Admin</button>
+            <Link
+              href={buildHref("all")}
+              className={`filter-pill ${wsFilter === "all" ? "is-active" : ""}`}
+            >
+              All ({total})
+            </Link>
+            <Link
+              href={buildHref("default")}
+              className={`filter-pill ${wsFilter === "default" ? "is-active" : ""}`}
+            >
+              Default ({defaults})
+            </Link>
+            <Link
+              href={buildHref("other")}
+              className={`filter-pill ${wsFilter === "other" ? "is-active" : ""}`}
+            >
+              Other ({total - defaults})
+            </Link>
+            <Link
+              href={buildHref("admin")}
+              className={`filter-pill ${wsFilter === "admin" ? "is-active" : ""}`}
+            >
+              Admin ({owned})
+            </Link>
           </div>
-          <div className="search-input-wrap">
+          <form method="GET" action="/dashboard/workspaces" className="search-input-wrap">
+            {wsFilter !== "all" && (
+              <input type="hidden" name="filter" value={wsFilter} />
+            )}
             <span className="search-input-icon" aria-hidden>⌕</span>
             <input
               className="search-input"
-              placeholder="search by workspace name, company, role..."
-              disabled
+              name="q"
+              defaultValue={query}
+              placeholder="Search by workspace, company, role…"
+              autoComplete="off"
             />
-          </div>
-          <button type="button" className="filter-button" aria-label="Filter">⚙</button>
+            {query && (
+              <Link
+                href={buildHref(wsFilter)}
+                className="search-input-clear"
+                aria-label="Clear search"
+              >
+                ×
+              </Link>
+            )}
+          </form>
         </div>
 
         {workspaces.length === 0 ? (
           <div className="list-card-empty">
             <p style={{ margin: "24px 0 8px", fontWeight: 600, color: "var(--fg)" }}>No workspaces yet</p>
             <p style={{ margin: 0 }}>Create your first workspace below to get started.</p>
+          </div>
+        ) : visibleWorkspaces.length === 0 ? (
+          <div className="list-card-empty">
+            <p style={{ margin: "24px 0 8px", fontWeight: 600, color: "var(--fg)" }}>No workspaces match these filters</p>
+            <p style={{ margin: 0 }}>
+              Try a different filter or{" "}
+              <Link href="/dashboard/workspaces">clear filters</Link>.
+            </p>
           </div>
         ) : (
           <>
@@ -169,7 +257,7 @@ export default async function WorkspacesIndex() {
                   </tr>
                 </thead>
                 <tbody>
-                  {workspaces.map((w) => {
+                  {visibleWorkspaces.map((w) => {
                     const isActive = w.workspaceId === claims.workspaceId;
                     return (
                       <tr key={w.workspaceId} className="is-clickable">
