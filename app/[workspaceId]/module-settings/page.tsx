@@ -158,7 +158,7 @@ export default async function WorkspaceModuleSettingsPage({
   return (
     <Chrome
       active="workspaces"
-      pageTitle="Module Settings"
+      pageTitle="Workspace Settings"
       user={{ userId: claims.userId, displayName, handle, isOperator }}
       activeCompany={ctx?.activeCompany ?? null}
       tenantOptions={ctx?.tenantOptions ?? []}
@@ -174,7 +174,7 @@ export default async function WorkspaceModuleSettingsPage({
             <span className="page-breadcrumb-sep">›</span>
           </>
         )}
-        <span className="page-breadcrumb-current">Module Settings</span>
+        <span className="page-breadcrumb-current">Settings</span>
       </div>
 
       {error && (
@@ -190,7 +190,7 @@ export default async function WorkspaceModuleSettingsPage({
             <div className="hero-card-text">
               <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
                 <span className="data-table-id">{shortId(workspace.workspaceId)}</span>
-                <span className="pill is-violet">Module Settings</span>
+                <span className="pill is-violet">Settings</span>
               </div>
               <h1 className="hero-card-title">{workspace.name}</h1>
               <p className="hero-card-subtitle">

@@ -131,7 +131,7 @@ export default async function WorkspaceDetailPage({
                   href={`/dashboard/workspaces/${workspace.workspaceId}/module-settings`}
                   className="btn btn-secondary"
                 >
-                  <span aria-hidden>⚙</span> Module Settings
+                  <span aria-hidden>⚙</span> Settings
                 </Link>
               )}
               {isOperator && (

@@ -118,6 +118,9 @@ export default async function WorkspacesIndex({
           <h1 className="page-header-title">Overview</h1>
         </div>
         <div className="page-header-actions">
+          <Link href="/dashboard/workspaces/settings" className="btn btn-secondary">
+            <span aria-hidden>⚙</span> Module Settings
+          </Link>
           <button type="button" className="btn btn-secondary">
             <span aria-hidden>⬆</span> Export
           </button>
