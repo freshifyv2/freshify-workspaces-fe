@@ -115,17 +115,22 @@ export interface ModuleAdminView {
  * Sprint 4 / C6 — ModuleInfoView matches the BE /v1/modules/<mod>/info shape.
  * Used so the Module Settings page surfaces Registry + Available Roles from
  * the BE module-info endpoint instead of hardcoded values in the FE.
+ *
+ * Mirrors the ModuleInfo interface returned by
+ * freshify-workspaces/src/functions/getModuleInfo.ts.
  */
 export interface ModuleInfoView {
   moduleId: string;
-  service: string;
+  backendService: string;
+  frontendService: string;
   collections: string[];
-  endpoints: string[];
-  ownsRoleCatalog: string;
-  ownsRegistry?: string;
-  nestsUnder?: string;
-  defaultRoleKey: string;
+  routePrefix: string;
+  authOwnership: { owns: boolean; note: string };
+  settingsOwnership: { owner: string; note: string };
+  settingsUrl: string;
+  smiVersion: string;
   availableRoleKeys: string[];
+  roleLabels: Record<string, string>;
 }
 
 export interface WorkspaceAdminListItem {

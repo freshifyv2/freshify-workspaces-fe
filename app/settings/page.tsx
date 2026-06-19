@@ -45,31 +45,37 @@ function buildRegistry(info: ModuleInfoView | null): RegistryEntry[] {
   if (!info) {
     return [
       { key: "moduleId", label: "Module ID", value: "workspaces" },
-      { key: "service", label: "Backend service", value: "freshify-workspaces" },
+      { key: "backendService", label: "Backend service", value: "freshify-workspaces" },
     ];
   }
-  const rows: RegistryEntry[] = [
+  return [
     { key: "moduleId", label: "Module ID", value: info.moduleId },
-    { key: "service", label: "Backend service", value: info.service },
+    { key: "backendService", label: "Backend service", value: info.backendService },
+    { key: "frontendService", label: "Frontend service", value: info.frontendService },
     {
       key: "collections",
       label: "MongoDB collections",
       value: info.collections.join(", "),
     },
     {
-      key: "endpoints",
+      key: "routePrefix",
       label: "Public route prefix",
-      value: info.endpoints.join(", "),
+      value: info.routePrefix,
     },
-    { key: "ownsRoleCatalog", label: "Owns role catalog", value: info.ownsRoleCatalog },
+    {
+      key: "settingsOwnership",
+      label: "Settings ownership",
+      value: `${info.settingsOwnership.owner} — ${info.settingsOwnership.note}`,
+    },
+    {
+      key: "authOwnership",
+      label: "Auth ownership",
+      value: info.authOwnership.owns
+        ? `Owned — ${info.authOwnership.note}`
+        : info.authOwnership.note,
+    },
+    { key: "smiVersion", label: "SMI version", value: info.smiVersion },
   ];
-  if (info.nestsUnder) {
-    rows.push({ key: "nestsUnder", label: "Nests under", value: info.nestsUnder });
-  }
-  if (info.ownsRegistry) {
-    rows.push({ key: "ownsRegistry", label: "Owns tenant directory", value: info.ownsRegistry });
-  }
-  return rows;
 }
 
 function initials(name: string): string {
@@ -138,7 +144,7 @@ export default async function WorkspacesModuleSettingsPage() {
   }
   const REGISTRY = buildRegistry(info);
   const availableRoleKeys = info?.availableRoleKeys ?? settings?.availableRoleKeys ?? [];
-  const defaultRoleKey = info?.defaultRoleKey ?? settings?.defaultRoleKey ?? "";
+  const defaultRoleKey = settings?.defaultRoleKey ?? "";
 
   return (
     <Chrome
