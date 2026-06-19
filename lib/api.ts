@@ -111,6 +111,23 @@ export interface ModuleAdminView {
   source: "bootstrap" | "manual";
 }
 
+/**
+ * Sprint 4 / C6 — ModuleInfoView matches the BE /v1/modules/<mod>/info shape.
+ * Used so the Module Settings page surfaces Registry + Available Roles from
+ * the BE module-info endpoint instead of hardcoded values in the FE.
+ */
+export interface ModuleInfoView {
+  moduleId: string;
+  service: string;
+  collections: string[];
+  endpoints: string[];
+  ownsRoleCatalog: string;
+  ownsRegistry?: string;
+  nestsUnder?: string;
+  defaultRoleKey: string;
+  availableRoleKeys: string[];
+}
+
 export interface WorkspaceAdminListItem {
   workspaceId: string;
   companyId: string;

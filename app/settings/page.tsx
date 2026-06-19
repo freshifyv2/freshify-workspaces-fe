@@ -23,6 +23,7 @@ import { loadChromeContext } from "@/lib/chromeContext";
 import {
   get,
   type ModuleAdminView,
+  type ModuleInfoView,
   type ModuleSettingsView,
 } from "@/lib/api";
 import ModuleSettingsClient from "./ModuleSettingsClient";
@@ -35,28 +36,41 @@ interface RegistryEntry {
   value: string;
 }
 
-const REGISTRY: RegistryEntry[] = [
-  { key: "moduleId", label: "Module ID", value: "workspaces" },
-  { key: "service", label: "Backend service", value: "freshify-workspaces" },
-  {
-    key: "collections",
-    label: "MongoDB collections",
-    value:
-      "workspaces, workspace_members, workspace_role_catalog, module_settings, module_admins, audit_log",
-  },
-  {
-    key: "endpoints",
-    label: "Public route prefix",
-    value:
-      "/v1/workspaces, /v1/admin/workspaces, /v1/modules/workspaces",
-  },
-  { key: "ownsRoleCatalog", label: "Owns role catalog", value: "Yes — workspace-scope" },
-  {
-    key: "nestsUnder",
-    label: "Nests under",
-    value: "Companies (one company → many workspaces)",
-  },
-];
+/**
+ * Sprint 4 / C6 — REGISTRY is now built from the BE /v1/modules/workspaces/info
+ * response instead of being hardcoded. The fallback list below is only used
+ * if the info endpoint fails (rare; logged via loadError banner).
+ */
+function buildRegistry(info: ModuleInfoView | null): RegistryEntry[] {
+  if (!info) {
+    return [
+      { key: "moduleId", label: "Module ID", value: "workspaces" },
+      { key: "service", label: "Backend service", value: "freshify-workspaces" },
+    ];
+  }
+  const rows: RegistryEntry[] = [
+    { key: "moduleId", label: "Module ID", value: info.moduleId },
+    { key: "service", label: "Backend service", value: info.service },
+    {
+      key: "collections",
+      label: "MongoDB collections",
+      value: info.collections.join(", "),
+    },
+    {
+      key: "endpoints",
+      label: "Public route prefix",
+      value: info.endpoints.join(", "),
+    },
+    { key: "ownsRoleCatalog", label: "Owns role catalog", value: info.ownsRoleCatalog },
+  ];
+  if (info.nestsUnder) {
+    rows.push({ key: "nestsUnder", label: "Nests under", value: info.nestsUnder });
+  }
+  if (info.ownsRegistry) {
+    rows.push({ key: "ownsRegistry", label: "Owns tenant directory", value: info.ownsRegistry });
+  }
+  return rows;
+}
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -103,6 +117,7 @@ export default async function WorkspacesModuleSettingsPage() {
 
   let settings: ModuleSettingsView | null = null;
   let admins: ModuleAdminView[] = [];
+  let info: ModuleInfoView | null = null;
   let loadError: string | null = null;
   try {
     settings = await get<ModuleSettingsView>(
@@ -114,9 +129,16 @@ export default async function WorkspacesModuleSettingsPage() {
       token,
     );
     admins = adminsRes.admins ?? [];
+    info = await get<ModuleInfoView>(
+      "/v1/modules/workspaces/info",
+      token,
+    );
   } catch (e) {
     loadError = (e as Error).message;
   }
+  const REGISTRY = buildRegistry(info);
+  const availableRoleKeys = info?.availableRoleKeys ?? settings?.availableRoleKeys ?? [];
+  const defaultRoleKey = info?.defaultRoleKey ?? settings?.defaultRoleKey ?? "";
 
   return (
     <Chrome
@@ -238,8 +260,8 @@ export default async function WorkspacesModuleSettingsPage() {
         </div>
       </section>
 
-      {/* AVAILABLE ROLES */}
-      {settings && (
+      {/* AVAILABLE ROLES — Sprint 4 / C6: now fetched from /v1/modules/workspaces/info */}
+      {availableRoleKeys.length > 0 && (
         <section className="list-card" style={{ marginBottom: 16 }}>
           <header style={{ padding: "14px 16px", borderBottom: "1px solid var(--line)" }}>
             <h2 style={{ margin: 0, fontSize: 15 }}>Available Roles</h2>
@@ -256,13 +278,13 @@ export default async function WorkspacesModuleSettingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {settings.availableRoleKeys.map((k) => (
+                {availableRoleKeys.map((k) => (
                   <tr key={k}>
                     <td>
                       <code style={{ fontSize: 12 }}>{k}</code>
                     </td>
                     <td>
-                      {k === settings.defaultRoleKey ? (
+                      {k === defaultRoleKey ? (
                         <span
                           className="pill"
                           style={{
