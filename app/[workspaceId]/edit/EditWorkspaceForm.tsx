@@ -2,6 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  WORKSPACE_SCOPES,
+  WORKSPACE_SCOPE_LABELS,
+  DEFAULT_WORKSPACE_SCOPE,
+  type WorkspaceScope,
+} from "@/lib/api";
 
 interface Props {
   workspaceId: string;
@@ -9,6 +15,7 @@ interface Props {
     name: string;
     slug: string | null;
     isDefault: boolean;
+    scope: WorkspaceScope | null;
   };
   companyId: string;
   creatorName: string;
@@ -23,6 +30,9 @@ export default function EditWorkspaceForm({
   const router = useRouter();
   const [name, setName] = useState(initial.name);
   const [slug, setSlug] = useState(initial.slug ?? "");
+  const initialScope: WorkspaceScope =
+    initial.scope ?? DEFAULT_WORKSPACE_SCOPE;
+  const [scope, setScope] = useState<WorkspaceScope>(initialScope);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -37,6 +47,7 @@ export default function EditWorkspaceForm({
       if (name !== initial.name) body.name = name;
       const normSlug = slug.trim() || null;
       if (normSlug !== initial.slug) body.slug = normSlug;
+      if (scope !== initialScope) body.scope = scope;
 
       if (Object.keys(body).length === 0) {
         setSuccess("Nothing to save.");
@@ -128,6 +139,23 @@ export default function EditWorkspaceForm({
             />
             <span className="field-hint">
               The default workspace flag is set at creation.
+            </span>
+          </div>
+          <div className="field">
+            <label className="field-label">SCOPE</label>
+            <select
+              className="field-input field-select"
+              value={scope}
+              onChange={(e) => setScope(e.target.value as WorkspaceScope)}
+            >
+              {WORKSPACE_SCOPES.map((s) => (
+                <option key={s} value={s}>
+                  {WORKSPACE_SCOPE_LABELS[s]}
+                </option>
+              ))}
+            </select>
+            <span className="field-hint">
+              How broadly this workspace applies.
             </span>
           </div>
           <div className="field">

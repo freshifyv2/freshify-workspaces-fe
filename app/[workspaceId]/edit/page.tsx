@@ -157,6 +157,7 @@ export default async function WorkspaceEditPage({
               name: workspace.name,
               slug: workspace.slug,
               isDefault: workspace.isDefault,
+              scope: workspace.scope ?? null,
             }}
             companyId={workspace.companyId}
             creatorName={workspace.createdBy}
