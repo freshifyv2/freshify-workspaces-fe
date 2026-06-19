@@ -101,7 +101,7 @@ export default async function WorkspaceModuleSettingsPage({
     return (
       <OperatorOnly403
         active="workspaces"
-        pageTitle="Workspace — Module Settings"
+        pageTitle="Workspace — Settings"
         user={{ userId: claims.userId, displayName, handle, isOperator: false }}
         activeCompany={ctx?.activeCompany ?? (claims.companyName ? { name: claims.companyName } : null)}
         detail="Workspace module settings"
