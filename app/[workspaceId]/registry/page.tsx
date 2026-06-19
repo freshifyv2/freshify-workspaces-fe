@@ -17,9 +17,9 @@ import {
   COMPANIES_URL,
   type WorkspaceDetail,
 } from "@/lib/api";
-import { Chrome } from "@/lib/Chrome";
+import { Chrome } from "@freshifyv2/portal-shell-ui";
 import { OperatorOnly403 } from "@/lib/OperatorOnly";
-import { loadChromeContext } from "@/lib/chromeContext";
+import { loadChromeContext } from "@freshifyv2/portal-shell-ui";
 
 export const dynamic = "force-dynamic";
 

@@ -2,8 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { readSessionToken, decodeClaims } from "@/lib/session";
 import { get, getServiceJson, USERS_URL, type WorkspaceDetail } from "@/lib/api";
-import { Chrome } from "@/lib/Chrome";
-import { loadChromeContext } from "@/lib/chromeContext";
+import { Chrome } from "@freshifyv2/portal-shell-ui";
+import { loadChromeContext } from "@freshifyv2/portal-shell-ui";
 import AddMemberForm from "./AddMemberForm";
 import PendingMembers, { type PendingRow } from "./PendingMembers";
 
